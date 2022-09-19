@@ -1,51 +1,23 @@
 <script lang="ts">
 import { defineComponent } from "vue";
-import type { Dictionary } from "./dictionary";
-import type { LookupResponseDef } from "@/services/yandex.dictionary";
-import { reject } from "ramda";
+import { useDefStore } from "./stores/defs";
 import DefComponent from "./components/Def.vue";
 
 export default defineComponent({
-  created() {
-    this.$yandexDictionary.getLangs().then((targetLangs) => {
-      this.targetLangs = targetLangs;
-      this.sourceLangs = Object.keys(this.targetLangs);
-    });
+  setup() {
+    return { defStore: useDefStore() };
   },
-  methods: {
-    lookup() {
-      this.$yandexDictionary
-        .lookup(this.sourceLanguage, this.targetLanguage, this.phrase)
-        .then(
-          (lookupResponse) =>
-            (this.lookupResponseDefs = this.lookupResponseDefs.concat(
-              lookupResponse.def
-            ))
-        );
-    },
-    export() {
-      console.log(
-        reject(
-          (def: LookupResponseDef) => def.tr.length == 0,
-          this.lookupResponseDefs
-        )
-      );
-    },
-    getDef(offset: number) {
-      return this.lookupResponseDefs[this.lookupResponseDefs.length - offset];
-    },
+  mounted() {
+    this.defStore.fetchLangs();
   },
   components: {
     Def: DefComponent,
   },
   data() {
     return {
-      targetLangs: {} as Dictionary<string[]>,
-      sourceLangs: [] as string[],
       sourceLanguage: "en",
       targetLanguage: "ru",
       phrase: "",
-      lookupResponseDefs: [] as LookupResponseDef[],
     };
   },
 });
@@ -53,7 +25,7 @@ export default defineComponent({
 
 <template>
   <main class="container">
-    <div v-if="sourceLangs.length > 0" class="row ml-3 mr-3 mt-3">
+    <div v-if="defStore.sourceLangs.length > 0" class="row ml-3 mr-3 mt-3">
       <div class="col-md-6 mt-1">
         <label for="sourceLanguage" class="form-label">Source language</label>
         <select
@@ -61,7 +33,9 @@ export default defineComponent({
           class="form-select mb-1"
           id="sourceLanguage"
         >
-          <option v-for="lang in sourceLangs" :key="lang">{{ lang }}</option>
+          <option v-for="lang in defStore.sourceLangs" :key="lang">
+            {{ lang }}
+          </option>
         </select>
       </div>
       <div class="col-md-6 mt-1">
@@ -72,7 +46,10 @@ export default defineComponent({
           :disabled="!sourceLanguage"
           id="targetLanguage"
         >
-          <option v-for="lang in targetLangs[sourceLanguage]" :key="lang">
+          <option
+            v-for="lang in defStore.targetLangs[sourceLanguage]"
+            :key="lang"
+          >
             {{ lang }}
           </option>
         </select>
@@ -86,20 +63,33 @@ export default defineComponent({
           id="word"
           placeholder="Enter a word or a phrase"
           :disabled="!targetLanguage"
-          @keypress.enter="lookup()"
+          @keypress.enter="
+            defStore.lookup(sourceLanguage, targetLanguage, phrase)
+          "
         />
       </div>
-      <div class="col-md-12 mt-1">
-        <button class="btn btn-primary" :disabled="!phrase" @click="lookup()">
+      <div class="btn-group mt-2" role="group">
+        <button
+          class="btn btn-primary"
+          :disabled="!phrase"
+          @click="defStore.lookup(sourceLanguage, targetLanguage, phrase)"
+        >
           Look up and add
+        </button>
+        <button class="btn btn-secondary" @click="defStore.exportAll()">
+          Export all
+        </button>
+        <button class="btn btn-danger" @click="defStore.removeAll()">
+          Remove all
         </button>
       </div>
     </div>
     <div id="lookupResponseDefs" class="accordion ml-3 mr-3 mt-1">
       <Def
-        v-for="offset in lookupResponseDefs.length"
-        :key="offset"
-        :def="getDef(offset)"
+        v-for="(def, index) in defStore.allDefs"
+        :key="def.id"
+        :def="def"
+        :index="index"
       ></Def>
     </div>
   </main>

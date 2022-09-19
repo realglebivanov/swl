@@ -1,5 +1,5 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.node.json",
+  "extends": "@vue/tsconfig/tsconfig.web.json",
   "include": [
     "env.d.ts",
     "src/**/*",
@@ -7,6 +7,10 @@
   ],
   "compilerOptions": {
     "baseUrl": ".",
+    "strict": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "target": "ES2015",
     "paths": {
       "@/*": [
         "./src/*"

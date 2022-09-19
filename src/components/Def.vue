@@ -1,49 +1,56 @@
 <script lang="ts">
 import { defineComponent } from "vue";
-import type { LookupResponseDef } from "@/services/yandex.dictionary";
+import { useDefStore } from "@/stores/defs";
+import type { Def } from "@/stores/defs";
 
 export default defineComponent({
+  setup: () => ({ defStore: useDefStore() }),
   props: {
-    def: { type: Object as () => LookupResponseDef, required: true },
+    def: { type: Object as () => Def, required: true },
+    index: { type: Number, required: true },
   },
 });
 </script>
 
 <template>
   <div class="accordion-item">
-    <h2 class="accordion-header" id="headingOne">
+    <h2 class="accordion-header" :id="`collapseLookupResponseHeader-${index}`">
       <button
         class="accordion-button"
         type="button"
         data-bs-toggle="collapse"
-        data-bs-target="#collapseLookupResponse-{{offset}}"
-        aria-expanded="false"
-        aria-controls="collapseLookupResponse-{{offset}}"
+        :data-bs-target="`#collapseLookupResponse-${index}`"
+        :aria-expanded="index == 0"
+        :aria-controls="`collapseLookupResponse-${index}`"
       >
-        <h5>{{ def.text }}</h5>
-        <i>{{ def.pos }}({{ def.ts }})</i>
+        <h5>
+          {{ def.text }}(<i>{{ def.pos }}, [{{ def.ts }}]</i>)
+        </h5>
+        <span
+          class="badge badge-sm pull-right bg-danger"
+          @click="defStore.remove(def)"
+          >Delete</span
+        >
       </button>
     </h2>
     <div
-      id="collapseLookupResponse-{{offset}}"
-      class="accordion-collapse collapse show"
-      aria-labelledby="headingOne"
+      :id="`collapseLookupResponse-${index}`"
+      class="accordion-collapse collapse"
+      :aria-labelledby="`collapseLookupResponseHeader-${index}`"
       data-bs-parent="#lookupResponseDefs"
     >
       <div class="accordion-body">
-        <div v-for="tr in def.tr" :key="tr.text">
-          <p>
-            <b>Translation:&nbsp;</b>
-            <span>{{ tr.text }}</span>
-          </p>
-
-          <p v-if="tr.ex">
-            <b>Examples:&nbsp;</b>
-            <span v-for="ex in tr.ex" :key="ex.text">
-              {{ ex.tr }} ({{ ex.tr.map((tr) => tr.text).join(", ") }})
-            </span>
-          </p>
-        </div>
+        <ul>
+          <li v-for="tr in def.tr" :key="tr.text">
+            <b>{{ tr.text }}</b>
+            <template v-if="tr.ex">
+              <span v-for="ex in tr.ex" :key="ex.text" class="mr-1">
+                <i>{{ ex.text }}:</i>
+                {{ ex.tr.map((tr) => tr.text).join(", ") }}
+              </span>
+            </template>
+          </li>
+        </ul>
       </div>
     </div>
   </div>
