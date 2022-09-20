@@ -40,6 +40,8 @@ Menu.setApplicationMenu(Menu.buildFromTemplate([
 ]))
 
 app.whenReady().then(() => {
+  if (require('electron-squirrel-startup')) return app.quit();
+
   createWindow();
 
   app.on('activate', () => {

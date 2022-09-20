@@ -18,17 +18,18 @@
     "make": "npm run build && electron-forge make"
   },
   "dependencies": {
+    "electron-squirrel-startup": "^1.0.0",
+    "electron": "^19.0.17"
+  },
+  "devDependencies": {
     "@popperjs/core": "^2.11.6",
     "axios": "^0.27.2",
     "bootstrap": "^5.2.1",
     "csv-stringify": "^6.2.0",
-    "electron-squirrel-startup": "^1.0.0",
     "pinia": "^2.0.21",
     "ramda": "^0.28.0",
     "uuid": "^9.0.0",
-    "vue": "^3.2.38"
-  },
-  "devDependencies": {
+    "vue": "^3.2.38",
     "@electron-forge/cli": "^6.0.0-beta.66",
     "@electron-forge/maker-deb": "^6.0.0-beta.66",
     "@electron-forge/maker-rpm": "^6.0.0-beta.66",
@@ -50,7 +51,7 @@
   "config": {
     "forge": {
       "packagerConfig": {
-        "ignore": "(src|public|^index\\.html|\\.vscode|tsconfig\\.json|vite\\.config\\.js)|tsconfig\\.config\\.json"
+        "ignore": "(^src|^public|^index\\.html|^\\.vscode|tsconfig\\.json|^vite\\.config\\.js)|^tsconfig\\.config\\.json"
       },
       "makers": [
         {
