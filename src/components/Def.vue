@@ -9,6 +9,11 @@ export default defineComponent({
     def: { type: Object as () => Def, required: true },
     index: { type: Number, required: true },
   },
+  methods: {
+    isExpanded() {
+      return this.index == 0;
+    },
+  },
 });
 </script>
 
@@ -16,26 +21,22 @@ export default defineComponent({
   <div class="accordion-item">
     <h2 class="accordion-header" :id="`collapseLookupResponseHeader-${index}`">
       <button
-        class="accordion-button"
+        :class="[isExpanded() ? '' : 'collapsed', 'accordion-button']"
         type="button"
         data-bs-toggle="collapse"
         :data-bs-target="`#collapseLookupResponse-${index}`"
-        :aria-expanded="index == 0"
+        :aria-expanded="isExpanded()"
         :aria-controls="`collapseLookupResponse-${index}`"
       >
         <h5>
+          <b class="badge bg-danger" @click="defStore.remove(def)">-</b>
           {{ def.text }}(<i>{{ def.pos }}, [{{ def.ts }}]</i>)
         </h5>
-        <span
-          class="badge badge-sm pull-right bg-danger"
-          @click="defStore.remove(def)"
-          >Delete</span
-        >
       </button>
     </h2>
     <div
       :id="`collapseLookupResponse-${index}`"
-      class="accordion-collapse collapse"
+      :class="[isExpanded() ? 'show' : '', 'accordion-collapse', 'collapse']"
       :aria-labelledby="`collapseLookupResponseHeader-${index}`"
       data-bs-parent="#lookupResponseDefs"
     >

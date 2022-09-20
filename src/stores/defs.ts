@@ -1,17 +1,17 @@
-import { defineStore, type Store, type StoreDefinition, type _GettersTree } from 'pinia'
+import { defineStore } from 'pinia'
 import type { Dictionary } from "@/dictionary"
-import { YandexDictionaryService } from '@/services/yandex.dictionary.service'
+import { dictionaryService, ipcService } from '@/services'
 import { v4 as uuidv4 } from "uuid";
-import { map, reject } from 'ramda';
-import { IPCService } from '@/services/ipc.service';
-import type { SaveDialogReturnValue } from 'electron';
+import { filter, join, map, reject, take } from 'ramda';
+import { stringify } from 'csv-stringify/browser/esm/sync';
+import type { AppForm } from '@/app.form';
 
 interface State {
   defs: Def[],
   sourceLangs: string[],
   targetLangs: Dictionary<string[]>,
-  // dictionaryService: YandexDictionaryService,
-  // ipcService: IPCService
+  history: Dictionary<number>,
+  historyList: { key: string, timestamp: number }[]
 }
 
 export interface Tr {
@@ -30,37 +30,38 @@ export interface Def {
   tr: Tr[]
 }
 
-const services = {
-  dictionaryService: new YandexDictionaryService(
-    'dict.1.1.20220918T214714Z.712dfcb43dacbf0e.8dacdffcf53ff5f9aadaecc72e22f0c8649ae192'),
-  ipcService: new IPCService()
-}
-
 export const useDefStore = defineStore('defs', {
   state: (): State => ({
     defs: [],
     sourceLangs: [],
     targetLangs: {},
+    history: {},
+    historyList: []
   }),
   getters: {
-    allDefs: (state: State) => state.defs
+    allDefs: (state: State) => state.defs,
+    filterDefs: (state: State) => ({ phrase, partOfSpeech }: AppForm) => {
+      const substrMatches = reject((def: Def) => def.text.indexOf(phrase) == -1, state.defs);
+      return partOfSpeech == 'any' ?
+        substrMatches :
+        filter((def: Def) => def.pos == partOfSpeech, substrMatches)
+    },
+    formInHistory: (state: State) => (form: AppForm) => state.history[form.getKey()] !== undefined
   },
   actions: {
     exportAll() {
       const options = {
         title: "Save file",
-        defaultPath: "newWords",
+        defaultPath: "newWords.csv",
         buttonLabel: "Save",
-
-        filters: [
-          { name: 'txt', extensions: ['txt'] },
-          { name: 'All Files', extensions: ['*'] }
-        ]
+        filters: [{ name: 'csv', extensions: ['csv'] }]
       };
 
-      services.ipcService.showSaveDialog(options).then(({ filePath, canceled }: SaveDialogReturnValue) => {
-        if (filePath != undefined && !canceled) {
-          services.ipcService.writeFile(filePath, "hello world", 'utf-8');
+      ipcService.showSaveDialog(options).then(({ filePath, canceled }) => {
+        if (filePath !== undefined && !canceled) {
+          const csv = stringify(this.defs.map(def =>
+            [def.text, join('/', map((tr: Tr) => tr.text, take(3, def.tr)))]))
+          ipcService.writeFile(filePath, csv, "utf-8");
         }
       });
     },
@@ -71,13 +72,21 @@ export const useDefStore = defineStore('defs', {
       this.defs = reject((def: Def) => def.id == rDef.id, this.defs)
     },
     async fetchLangs() {
-      const targetLangs = await services.dictionaryService.getLangs()
+      const targetLangs = await dictionaryService.getLangs()
       this.targetLangs = targetLangs
       this.sourceLangs = Object.keys(targetLangs)
     },
-    async lookup(sourceLang: string, targetLang: string, phrase: string) {
-      const { def: def } = await services.dictionaryService.lookup(sourceLang, targetLang, phrase)
-      this.defs = map((def: Def) => ({ ...def, id: uuidv4() }), def).concat(this.defs)
+    async lookup(appForm: AppForm) {
+      const { sourceLang, targetLang, phrase, partOfSpeech } = appForm
+      const historyKey = appForm.getKey();
+      const timestamp = Date.now()
+
+      let { def: defs } = await dictionaryService.lookup(sourceLang, targetLang, phrase)
+      defs = partOfSpeech == "any" ? defs : filter(def => def.pos == partOfSpeech, defs)
+      this.defs = map((def: Def) => ({ ...def, id: uuidv4() }), defs).concat(this.defs)
+
+      this.historyList.push({ key: historyKey, timestamp: timestamp })
+      this.history[historyKey] = timestamp
     }
   }
 })

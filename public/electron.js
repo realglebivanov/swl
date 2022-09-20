@@ -1,6 +1,9 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { BrowserWindow, Menu, app, dialog, ipcMain } = require('electron');
 const fs = require('node:fs')
 const path = require('path')
+
+const isDev = process.env.DEV === 'true';
+const isMac = process.platform === 'darwin';
 
 ipcMain.handle(
   'showSaveDialog',
@@ -10,14 +13,12 @@ ipcMain.handle(
   'writeFile',
   (event, { path, content, encoding }) => fs.writeFileSync(path, content, encoding))
 
-const isDev = process.env.DEV === 'true';
-
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'dist', 'preload.js')
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
@@ -25,9 +26,18 @@ const createWindow = () => {
     win.loadURL('http://localhost:5173');
     win.webContents.openDevTools();
   } else {
-    win.loadFile(path.join(__dirname, 'dist', 'index.html'));
+    win.loadFile(path.join(__dirname, 'index.html'));
   }
 };
+
+Menu.setApplicationMenu(Menu.buildFromTemplate([
+  {
+    label: 'File',
+    submenu: [
+      isMac ? { role: 'close' } : { role: 'quit' }
+    ]
+  },
+]))
 
 app.whenReady().then(() => {
   createWindow();
@@ -40,7 +50,5 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (!isMac) app.quit();
 });
