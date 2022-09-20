@@ -50,7 +50,7 @@
   "config": {
     "forge": {
       "packagerConfig": {
-        "ignore": "(src|index\\.html|\\.vscode|tsconfig\\.json|vite\\.config\\.js)|tsconfig\\.config\\.json"
+        "ignore": "(src|public|^index\\.html|\\.vscode|tsconfig\\.json|vite\\.config\\.js)|tsconfig\\.config\\.json"
       },
       "makers": [
         {
