@@ -1,4 +1,6 @@
-export class AppForm {
+import type { Def } from "./def";
+
+export class DefForm {
   public sourceLang: string = "en";
   public targetLang: string = "ru";
   public phrase: string = "";
@@ -11,12 +13,22 @@ export class AppForm {
   ];
   public partOfSpeech: string = "any";
 
-  public getKey() {
+
+  public getFormKey() {
     return [
       this.sourceLang,
       this.targetLang,
       this.phrase,
-      this.partsOfSpeech,
-    ].join("/");
+      this.partOfSpeech,
+    ].join("-");
+  }
+
+  public getDefKey(def: Def) {
+    return [
+      this.sourceLang,
+      this.targetLang,
+      this.phrase,
+      def.pos,
+    ].join("-");
   }
 }

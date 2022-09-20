@@ -2,7 +2,6 @@
 import { defineComponent } from "vue";
 import { useDefStore } from "./stores/defs";
 import DefComponent from "./components/Def.vue";
-import { AppForm } from "./app.form";
 
 export default defineComponent({
   setup() {
@@ -13,25 +12,21 @@ export default defineComponent({
       (this.$refs.phraseInput as HTMLElement).focus();
     });
   },
+  data() {
+    return {
+      languageNames: new Intl.DisplayNames(["en"], { type: "language" }),
+    };
+  },
   components: {
     DefComponent,
   },
-  data() {
-    return {
-      form: new AppForm(),
-    };
-  },
-  methods: {
-    lookup() {
-      this.defStore.lookup(Object.assign(this.form, {}));
-    },
-    filteredDefs() {
-      return this.defStore.filterDefs(this.form);
-    },
+  computed: {
     notFound() {
       return (
-        this.defStore.formInHistory(this.form) &&
-        this.filteredDefs().length <= 0
+        this.defStore.history.length != 0 &&
+        this.defStore.form.phrase != "" &&
+        this.defStore.formInHistory &&
+        this.defStore.filteredDefs.length <= 0
       );
     },
   },
@@ -44,65 +39,74 @@ export default defineComponent({
       <div class="col-md-6 mt-1">
         <label for="sourceLanguage" class="form-label">Source language</label>
         <select
-          v-model="form.sourceLang"
+          v-model="defStore.form.sourceLang"
           class="form-select mb-1"
           id="sourceLanguage"
         >
-          <option v-for="lang in defStore.sourceLangs" :key="lang">
-            {{ lang }}
+          <option
+            v-for="lang in defStore.sourceLangs"
+            :key="lang"
+            :value="lang"
+          >
+            {{ languageNames.of(lang) }}
           </option>
         </select>
       </div>
       <div class="col-md-6 mt-1">
         <label for="targetLanguage" class="form-label">Target language</label>
         <select
-          v-model="form.targetLang"
+          v-model="defStore.form.targetLang"
           class="form-select mb-1"
-          :disabled="!form.sourceLang"
+          :disabled="!defStore.form.sourceLang"
           id="targetLanguage"
         >
           <option
-            v-for="lang in defStore.targetLangs[form.sourceLang]"
+            v-for="lang in defStore.targetLangs[defStore.form.sourceLang]"
             :key="lang"
+            :value="lang"
           >
-            {{ lang }}
+            {{ languageNames.of(lang) }}
           </option>
         </select>
       </div>
       <div class="col-md-6 mt-1">
         <label for="phrase" class="form-label">Word or phrase to look up</label>
         <input
-          v-model="form.phrase"
+          v-model="defStore.form.phrase"
           type="text"
           class="form-control"
           ref="phraseInput"
           id="phrase"
           placeholder="Type a word or a phrase and press Enter"
-          :disabled="!form.targetLang"
-          @keypress.enter="lookup()"
+          :disabled="!defStore.form.targetLang"
+          @keypress.enter="defStore.lookup()"
         />
       </div>
       <div class="col-md-6 mt-1">
         <label for="partOfSpeech" class="form-label">Part of speech</label>
         <select
-          v-model="form.partOfSpeech"
+          v-model="defStore.form.partOfSpeech"
           class="form-select"
-          :disabled="!form.sourceLang"
+          :disabled="!defStore.form.sourceLang"
           id="partOfSpeech"
         >
           <option
-            v-for="partOfSpeech in form.partsOfSpeech"
+            v-for="partOfSpeech in defStore.form.partsOfSpeech"
             :key="partOfSpeech"
+            :value="partOfSpeech"
           >
-            {{ partOfSpeech }}
+            {{
+              partOfSpeech[0].toUpperCase() +
+              partOfSpeech.slice(1).toLowerCase()
+            }}
           </option>
         </select>
       </div>
       <div class="btn-group mt-2" role="group">
         <button
           class="btn btn-primary"
-          :disabled="!form.phrase"
-          @click="lookup()"
+          :disabled="!defStore.form.phrase"
+          @click="defStore.lookup()"
         >
           Look up and add
         </button>
@@ -113,17 +117,22 @@ export default defineComponent({
     </div>
     <div id="lookupResponseDefs" class="accordion ml-3 mr-3 mt-1">
       <def-component
-        v-for="(def, index) in filteredDefs()"
+        v-for="(def, index) in defStore.filteredDefs"
         :key="def.id"
         :def="def"
         :index="index"
       ></def-component>
-      <template v-if="notFound()">
+      <template v-if="defStore.historyList.length == 0">
+        <div class="alert alert-primary" role="alert">
+          Start out by typing in a word and looking it up.
+        </div>
+      </template>
+      <template v-else-if="notFound">
         <div class="alert alert-danger" role="alert">
           No translations found.
         </div>
       </template>
-      <template v-else-if="filteredDefs().length <= 0">
+      <template v-else-if="defStore.filteredDefs.length <= 0">
         <div class="alert alert-primary" role="alert">
           Try to look up and add the word.
         </div>

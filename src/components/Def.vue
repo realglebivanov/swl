@@ -45,10 +45,10 @@ export default defineComponent({
           <li v-for="tr in def.tr" :key="tr.text">
             <b>{{ tr.text }}</b>
             <template v-if="tr.ex">
-              <span v-for="ex in tr.ex" :key="ex.text" class="mr-1">
+              <p v-for="ex in tr.ex" :key="ex.text" class="mr-1">
                 <i>{{ ex.text }}:</i>
                 {{ ex.tr.map((tr) => tr.text).join(", ") }}
-              </span>
+              </p>
             </template>
           </li>
         </ul>

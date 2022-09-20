@@ -1,33 +1,24 @@
+export { DefForm } from './def.form'
+export { type Def } from './def'
+
 import { defineStore } from 'pinia'
-import type { Dictionary } from "@/dictionary"
-import { dictionaryService, ipcService } from '@/services'
 import { v4 as uuidv4 } from "uuid";
-import { filter, join, map, reject, take } from 'ramda';
+import { clone, filter, join, map, reject, take } from 'ramda';
 import { stringify } from 'csv-stringify/browser/esm/sync';
-import type { AppForm } from '@/app.form';
+import type { Dictionary } from "@/dictionary"
+import type { Def, Tr } from './def';
+import { dictionaryService, ipcService } from '@/services'
+import { DefForm } from './def.form';
+
+type HistoryListEntry = { key: string, timestamp: number }
 
 interface State {
   defs: Def[],
   sourceLangs: string[],
   targetLangs: Dictionary<string[]>,
   history: Dictionary<number>,
-  historyList: { key: string, timestamp: number }[]
-}
-
-export interface Tr {
-  text: string,
-  pos: string,
-  syn: { text: string }[],
-  mean: { text: string }[],
-  ex: { text: string, tr: { text: string }[] }[]
-}
-
-export interface Def {
-  id: string,
-  text: string,
-  pos: string,
-  ts: string,
-  tr: Tr[]
+  historyList: HistoryListEntry[],
+  form: DefForm
 }
 
 export const useDefStore = defineStore('defs', {
@@ -36,17 +27,19 @@ export const useDefStore = defineStore('defs', {
     sourceLangs: [],
     targetLangs: {},
     history: {},
-    historyList: []
+    historyList: [],
+    form: new DefForm()
   }),
   getters: {
     allDefs: (state: State) => state.defs,
-    filterDefs: (state: State) => ({ phrase, partOfSpeech }: AppForm) => {
+    filteredDefs: (state: State) => {
+      const { phrase, partOfSpeech } = state.form
       const substrMatches = reject((def: Def) => def.text.indexOf(phrase) == -1, state.defs);
       return partOfSpeech == 'any' ?
         substrMatches :
         filter((def: Def) => def.pos == partOfSpeech, substrMatches)
     },
-    formInHistory: (state: State) => (form: AppForm) => state.history[form.getKey()] !== undefined
+    formInHistory: (state: State) => state.history[state.form.getFormKey()] !== undefined
   },
   actions: {
     exportAll() {
@@ -65,28 +58,28 @@ export const useDefStore = defineStore('defs', {
         }
       });
     },
-    removeAll() {
-      this.defs = []
-    },
     remove(rDef: Def) {
       this.defs = reject((def: Def) => def.id == rDef.id, this.defs)
+      delete this.history[rDef.historyKey]
     },
     async fetchLangs() {
       const targetLangs = await dictionaryService.getLangs()
       this.targetLangs = targetLangs
       this.sourceLangs = Object.keys(targetLangs)
     },
-    async lookup(appForm: AppForm) {
-      const { sourceLang, targetLang, phrase, partOfSpeech } = appForm
-      const historyKey = appForm.getKey();
+    async lookup() {
+      const tempForm = clone(this.form)
+      const { sourceLang, targetLang, phrase, partOfSpeech } = tempForm
       const timestamp = Date.now()
 
       let { def: defs } = await dictionaryService.lookup(sourceLang, targetLang, phrase)
       defs = partOfSpeech == "any" ? defs : filter(def => def.pos == partOfSpeech, defs)
-      this.defs = map((def: Def) => ({ ...def, id: uuidv4() }), defs).concat(this.defs)
+      defs = defs.map((def: Def) => ({ ...def, id: uuidv4(), historyKey: tempForm.getDefKey(def) }))
+      this.defs = defs.concat(this.defs)
 
-      this.historyList.push({ key: historyKey, timestamp: timestamp })
-      this.history[historyKey] = timestamp
+      this.historyList = this.historyList.concat(
+        defs.map(({ historyKey }) => ({ key: historyKey, timestamp: timestamp })))
+      defs.forEach(({ historyKey }) => this.history[historyKey] = timestamp)
     }
   }
 })
