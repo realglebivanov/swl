@@ -9,18 +9,25 @@ export class DefForm {
     "adjective",
     "verb",
     "adverb",
+    "participle",
     "any",
   ];
   public partOfSpeech: string = "any";
 
-
-  public getFormKey() {
-    return [
+  public getFormKeys() {
+    const partsOfSpeech = this.partOfSpeech == "any" ? [
+      "noun",
+      "adjective",
+      "verb",
+      "adverb",
+      "participle"
+    ] : [this.partOfSpeech]
+    return partsOfSpeech.map(partOfSpeech => [
       this.sourceLang,
       this.targetLang,
       this.phrase,
-      this.partOfSpeech,
-    ].join("-");
+      partOfSpeech,
+    ].join("-"));
   }
 
   public getDefKey(def: Def) {

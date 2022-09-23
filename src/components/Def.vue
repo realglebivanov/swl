@@ -1,12 +1,12 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { useDefStore } from "@/stores/defs";
-import type { Def } from "@/stores/defs";
+import type { DefRecord } from "@/stores/defs";
 
 export default defineComponent({
   setup: () => ({ defStore: useDefStore() }),
   props: {
-    def: { type: Object as () => Def, required: true },
+    def: { type: Object as () => DefRecord, required: true },
     index: { type: Number, required: true },
   },
   methods: {
