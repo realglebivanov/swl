@@ -37,6 +37,6 @@ export class DefRecord implements Def {
   }
 
   public buildCsvRecord() {
-    return [this.text, join('/', map((tr: Tr) => tr.text, take(3, this.tr)))]
+    return [`${this.text}(${this.pos})`, join('/', map((tr: Tr) => tr.text, take(3, this.tr)))]
   }
 }

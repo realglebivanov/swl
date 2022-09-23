@@ -30,14 +30,14 @@ const createWindow = () => {
   }
 };
 
-Menu.setApplicationMenu(Menu.buildFromTemplate([
-  {
-    label: 'File',
-    submenu: [
-      isMac ? { role: 'close' } : { role: 'quit' }
-    ]
-  },
-]))
+// Menu.setApplicationMenu(Menu.buildFromTemplate([
+//   {
+//     label: 'File',
+//     submenu: [
+//       isMac ? { role: 'close' } : { role: 'quit' }
+//     ]
+//   },
+// ]))
 
 app.whenReady().then(() => {
   if (require('electron-squirrel-startup')) return app.quit();

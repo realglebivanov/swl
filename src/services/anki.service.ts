@@ -1,5 +1,4 @@
 import { Axios } from "axios"
-import qs from "node:querystring"
 
 type RequestType = "deckNames" | "createDeck" | "addNote"
 
@@ -61,14 +60,13 @@ export class AnkiService {
   public constructor() {
     this.axios = new Axios({
       baseURL: 'http://localhost:8765',
-      timeout: 1000,
-      paramsSerializer: qs.encode,
-      params: { version: this.apiVersion }
+      timeout: 1000
     })
   }
 
-  public async invoke<T extends RequestType>(type: T, params: RequestParams<T>) {
-    const { data: responseData } = await this.axios.post('/', { type, params })
+  public async invoke<T extends RequestType>(action: T, params: RequestParams<T>) {
+    const { data: responseData } =
+      await this.axios.post('/', JSON.stringify({ action, params, version: this.apiVersion }))
     const response = JSON.parse(responseData) as Response<T>
     if (response.error != null) {
       throw new Error(response.error)
