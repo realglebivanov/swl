@@ -1,9 +1,6 @@
 import { defineStore } from 'pinia'
 import { useDefStore } from '@/stores/defs'
-import { v4 as uuidv4 } from "uuid";
-import { any, clone, filter, join, map, reject, take } from 'ramda';
-import { stringify } from 'csv-stringify/browser/esm/sync';
-import type { Dictionary } from "@/dictionary"
+import { clone, uniqBy } from 'ramda';
 import { ankiService } from '@/services'
 import { AnkiForm } from './anki.form';
 
@@ -40,8 +37,9 @@ export const useAnkiStore = defineStore('anki', {
     async exportAll() {
       const defStore = useDefStore()
       const form = clone(this.form)
-      defStore.allDefs
-        .filter(def => !this.exportedKeys.has(def.historyKey))
+      uniqBy(
+        def => def.historyKey,
+        defStore.allDefs.filter(def => !this.exportedKeys.has(def.historyKey)))
         .forEach(async def => {
           const [text, translations] = def.buildCsvRecord()
           await ankiService.invoke("addNote", {
