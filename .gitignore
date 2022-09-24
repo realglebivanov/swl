@@ -28,3 +28,4 @@ coverage
 *.sw?
 
 out/
+public/123.txt

@@ -1,6 +1,6 @@
 import { Axios } from "axios"
 
-type RequestType = "deckNames" | "createDeck" | "addNote"
+type RequestType = "deckNames" | "createDeck" | "addNote" | "deleteDecks"
 
 type DuplicateScope = "deck"
 
@@ -39,6 +39,10 @@ type RequestParams<A extends RequestType> = Fetch<{
       video: MultimediaObject[],
       picture: MultimediaObject[]
     }
+  },
+  deleteDecks: {
+    decks: string[],
+    cardsToo: boolean
   }
 }, A>
 
@@ -48,6 +52,7 @@ type Response<A extends RequestType> = {
     createDeck: number,
     deckNames: string[],
     addNote: number,
+    deleteDecks: null
   }, A> | null
 }
 
