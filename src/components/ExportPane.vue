@@ -16,20 +16,23 @@ export default defineComponent({
 
 <template>
   <div class="row mt-2">
-    <div class="col-md-12" v-if="ankiStore.decks.length > 0">
-      <h5>
+    <div class="col-md-12">
+      <h5 v-if="ankiStore.decks.length > 0">
         Choose an anki deck
         <button class="btn btn-sm btn-danger" type="button" :disabled="!ankiStore.form.ankiDeck"
           @click="ankiStore.deleteDeck()">
           Delete selected deck
         </button>
       </h5>
-      <div class="form-check" v-for="ankiDeck in ankiStore.decks" :key="ankiDeck">
+      <div class="form-check" v-for="ankiDeck in ankiStore.decks" :key="ankiDeck" v-if="ankiStore.decks.length > 0">
         <input class="form-check-input" name="ankiDeck" type="radio" :id="`deck-${ankiDeck}`"
           v-model="ankiStore.form.ankiDeck" :value="ankiDeck">
         <label class="form-check-label" :for="`deck-${ankiDeck}`">
           {{ ankiDeck }}
         </label>
+      </div>
+      <div class="alert alert-primary" role="alert" v-else>
+        Try to create a new anki deck.
       </div>
       <div class="input-group mb-3">
         <input v-model="ankiStore.form.newAnkiDeck" type="text" class="form-control"
@@ -48,11 +51,6 @@ export default defineComponent({
         <label class="form-check-label" :for="`deck-modelname-${modelName.value}`">
           {{ modelName.description }}
         </label>
-      </div>
-    </div>
-    <div v-else>
-      <div class="alert alert-primary" role="alert">
-        Try to create a new anki deck.
       </div>
     </div>
   </div>
