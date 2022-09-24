@@ -8,13 +8,14 @@ export default defineComponent({
     return { defStore: useDefStore(), ankiStore: useAnkiStore() };
   },
   mounted() {
+    this.ankiStore.createDefaultModels();
     this.ankiStore.fetchDecks();
   }
 });
 </script>
 
 <template>
-  <div class="row mt-3">
+  <div class="row mt-2">
     <div class="col-md-12" v-if="ankiStore.decks.length > 0">
       <h5>
         Choose an anki deck
@@ -30,22 +31,28 @@ export default defineComponent({
           {{ ankiDeck }}
         </label>
       </div>
-    </div>
-    <div v-else>
-      <div class="alert alert-primary" role="alert">
-        Try to create a new anki deck.
-      </div>
-    </div>
-  </div>
-  <div class="row mt-3">
-    <div class="col-md-12">
       <div class="input-group mb-3">
         <input v-model="ankiStore.form.newAnkiDeck" type="text" class="form-control"
-          placeholder="Type in a new anki deck name" />
+          placeholder="Type in a new anki deck name" @keypress.enter="ankiStore.createDeck()" />
         <button class="btn btn-outline-success" type="button" :disabled="!ankiStore.form.newAnkiDeck"
           @click="ankiStore.createDeck()">
           Create
         </button>
+      </div>
+      <h5 class="mt-2">
+        Choose created card type
+      </h5>
+      <div class="form-check" v-for="modelName in ankiStore.form.getDefaultModelNames()" :key="modelName.value">
+        <input class="form-check-input" name="ankiModel" type="radio" :id="`deck-modelname-${modelName.value}`"
+          v-model="ankiStore.form.ankiModel" :value="modelName.value">
+        <label class="form-check-label" :for="`deck-modelname-${modelName.value}`">
+          {{ modelName.description }}
+        </label>
+      </div>
+    </div>
+    <div v-else>
+      <div class="alert alert-primary" role="alert">
+        Try to create a new anki deck.
       </div>
     </div>
   </div>

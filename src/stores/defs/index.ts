@@ -54,7 +54,21 @@ export const useDefStore = defineStore('defs', {
       ipcService.showSaveDialog(options).then(({ filePath, canceled }) => {
         if (filePath !== undefined && !canceled) {
           const csv = stringify(this.defs.map(def => def.buildCsvRecord()))
-          ipcService.writeFile(filePath, csv, "utf-8");
+          ipcService.writeFile(filePath, csv, "utf-8").then(
+            () => {
+              ipcService.showMessageBox({
+                message: `Successfully exported new cards to ${filePath}`,
+                type: "info",
+                title: "Success"
+              })
+            },
+            () => {
+              ipcService.showMessageBox({
+                message: "Error during writing new cards to file",
+                type: "error",
+                title: "Error"
+              })
+            });
         }
       });
     },

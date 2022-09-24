@@ -6,6 +6,10 @@ const isDev = process.env.DEV === 'true';
 const isMac = process.platform === 'darwin';
 
 ipcMain.handle(
+  'showMessageBox',
+  (event, options) => dialog.showMessageBox(event.sender, options))
+
+ipcMain.handle(
   'showSaveDialog',
   (event, options) => dialog.showSaveDialog(event.sender, options))
 

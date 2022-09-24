@@ -1,18 +1,27 @@
+import type { Dictionary } from "@/dictionary"
 import { Axios } from "axios"
 
-type RequestType = "deckNames" | "createDeck" | "addNote" | "deleteDecks"
+type RequestType =
+  "deckNames" |
+  "createDeck" | "addNote" | "deleteDecks" | "modelNamesAndIds" | "createModel" | "sync"
 
 type DuplicateScope = "deck"
 
-type NoteField = "Front" | "Back"
+type NoteField = "Word" | "Translation"
 
-type ModelName = "Basic"
+export type ModelName = "swl-basic" | "swl-reversed-card"
 
 type MultimediaObject = {
   url: string,
   filename: string,
   skipHash: string,
   fields: NoteField[]
+}
+
+export type CardTemplate = {
+  Name: string,
+  Front: string,
+  Back: string
 }
 
 type RequestParams<A extends RequestType> = Fetch<{
@@ -43,7 +52,16 @@ type RequestParams<A extends RequestType> = Fetch<{
   deleteDecks: {
     decks: string[],
     cardsToo: boolean
-  }
+  },
+  modelNamesAndIds: undefined,
+  createModel: {
+    modelName: ModelName,
+    inOrderFields: NoteField[],
+    css?: string,
+    isCloze: boolean,
+    cardTemplates: CardTemplate[]
+  },
+  sync: undefined
 }, A>
 
 type Response<A extends RequestType> = {
@@ -52,8 +70,11 @@ type Response<A extends RequestType> = {
     createDeck: number,
     deckNames: string[],
     addNote: number,
-    deleteDecks: null
-  }, A> | null
+    deleteDecks: null,
+    modelNamesAndIds: Dictionary<number>,
+    createModel: { id: number },
+    sync: null
+  }, A>
 }
 
 type Fetch<R, K extends keyof R> = R[K]
@@ -69,6 +90,10 @@ export class AnkiService {
     })
   }
 
+  public getDefaultModelNames(): ModelName[] {
+    return ["swl-basic", "swl-reversed-card"]
+  }
+
   public async invoke<T extends RequestType>(action: T, params: RequestParams<T>) {
     const { data: responseData } =
       await this.axios.post('/', JSON.stringify({ action, params, version: this.apiVersion }))
@@ -76,6 +101,6 @@ export class AnkiService {
     if (response.error != null) {
       throw new Error(response.error)
     }
-    return response
+    return response.result
   }
 }
